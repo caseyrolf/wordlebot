@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { App } from "@slack/bolt";
-import { openDatabase, saveResult, userStats, leaderboard } from "./database.js";
+import { openDatabase, saveResult, userStats, leaderboard, puzzleWinsLeaderboard } from "./database.js";
 import { backfillChannel } from "./backfill.js";
 import { parseWordle, formatUserStats } from "./wordle.js";
 
@@ -52,8 +52,16 @@ app.command(commandName, async ({ command, ack, respond, client, logger }) => {
 
   if (action === "leaderboard") {
     const rows = leaderboard(db, command.channel_id);
+    const puzzleWins = puzzleWinsLeaderboard(db, command.channel_id);
     const text = rows.length
-      ? `*Wordle leaderboard*\n${rows.map((row, i) => `${i + 1}. <@${row.user_id}> — ${row.success_rate}% wins, ${row.average_guesses ?? "—"} avg, ${row.games} games`).join("\n")}`
+      ? [
+          "*Wordle leaderboard*",
+          rows.map((row, i) => `${i + 1}. <@${row.user_id}> — ${row.success_rate}% success, ${row.average_guesses ?? "—"} avg, ${row.games} games`).join("\n"),
+          "*Puzzle wins* _(lowest successful guess count; ties share the win)_",
+          puzzleWins.length
+            ? puzzleWins.map((row, i) => `${i + 1}. <@${row.user_id}> — ${row.puzzle_wins} win${row.puzzle_wins === 1 ? "" : "s"}`).join("\n")
+            : "No completed Wordle puzzles yet.",
+        ].join("\n\n")
       : "No Wordle results have been recorded in this channel yet.";
     await respond({ response_type: "in_channel", text });
     return;

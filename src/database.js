@@ -22,6 +22,8 @@ export function openDatabase(path) {
     );
     CREATE INDEX IF NOT EXISTS wordle_results_channel_puzzle
       ON wordle_results(channel_id, puzzle_number);
+    CREATE INDEX IF NOT EXISTS wordle_results_channel_puzzle_score
+      ON wordle_results(channel_id, puzzle_number, success, guesses);
   `);
   return db;
 }
@@ -48,4 +50,24 @@ export function leaderboard(db, channelId) {
     ORDER BY success_rate DESC, average_guesses ASC, games DESC
     LIMIT 10
   `).all(channelId);
+}
+
+export function puzzleWinsLeaderboard(db, channelId) {
+  return db.prepare(`
+    WITH puzzle_minimums AS (
+      SELECT puzzle_number, MIN(guesses) AS winning_guesses
+      FROM wordle_results
+      WHERE channel_id = ? AND success = 1
+      GROUP BY puzzle_number
+    )
+    SELECT results.user_id, COUNT(*) AS puzzle_wins
+    FROM wordle_results AS results
+    INNER JOIN puzzle_minimums AS minimums
+      ON minimums.puzzle_number = results.puzzle_number
+      AND minimums.winning_guesses = results.guesses
+    WHERE results.channel_id = ? AND results.success = 1
+    GROUP BY results.user_id
+    ORDER BY puzzle_wins DESC, results.user_id ASC
+    LIMIT 10
+  `).all(channelId, channelId);
 }

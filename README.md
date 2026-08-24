@@ -21,10 +21,12 @@ Invite the bot to each channel it should read with `/invite @YourBot`.
 
 - `/wordlebot stats` — your stats in the current channel
 - `/wordlebot stats @someone` — another member's stats
-- `/wordlebot leaderboard` — top ten members in the current channel
+- `/wordlebot leaderboard` — top ten members plus puzzle wins in the current channel
 - `/wordlebot backfill` — import older top-level messages from the current channel
 
 The app recognizes shares such as `Wordle 1,278 3/6` and `Wordle 1,278 X/6`. Reposting or editing a share updates that person's result for the same puzzle rather than adding a duplicate.
+
+The leaderboard's **Puzzle wins** section counts the person or people with the lowest successful guess count for each puzzle. Ties share the win; unsuccessful results do not qualify.
 
 Backfill requires the bot to be invited to the target channel. It scans top-level channel messages; it does not scan replies within historical message threads. It may take time for very large channels because Slack paginates and rate-limits history requests.
 
