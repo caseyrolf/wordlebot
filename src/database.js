@@ -39,17 +39,29 @@ export function userStats(db, channelId, userId) {
 
 export function leaderboard(db, channelId) {
   return db.prepare(`
-    SELECT user_id,
+    WITH puzzle_maximums AS (
+      SELECT puzzle_number, MAX(guesses) AS highest_guesses
+      FROM wordle_results
+      WHERE channel_id = ? AND success = 1
+      GROUP BY puzzle_number
+    )
+    SELECT results.user_id,
            COUNT(*) AS games,
-           SUM(success) AS wins,
-           ROUND(100.0 * SUM(success) / COUNT(*), 1) AS success_rate,
-           ROUND(AVG(CASE WHEN success = 1 THEN guesses END), 2) AS average_guesses
-    FROM wordle_results
-    WHERE channel_id = ?
-    GROUP BY user_id
+           SUM(results.success) AS wins,
+           SUM(CASE
+             WHEN results.success = 0 OR results.guesses = maximums.highest_guesses THEN 1
+             ELSE 0
+           END) AS losses,
+           ROUND(100.0 * SUM(results.success) / COUNT(*), 1) AS success_rate,
+           ROUND(AVG(CASE WHEN results.success = 1 THEN results.guesses END), 2) AS average_guesses
+    FROM wordle_results AS results
+    LEFT JOIN puzzle_maximums AS maximums
+      ON maximums.puzzle_number = results.puzzle_number
+    WHERE results.channel_id = ?
+    GROUP BY results.user_id
     ORDER BY success_rate DESC, average_guesses ASC, games DESC
     LIMIT 10
-  `).all(channelId);
+  `).all(channelId, channelId);
 }
 
 export function puzzleWinsLeaderboard(db, channelId) {

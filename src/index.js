@@ -56,7 +56,7 @@ app.command(commandName, async ({ command, ack, respond, client, logger }) => {
     const text = rows.length
       ? [
           "*Wordle leaderboard*",
-          rows.map((row, i) => `${i + 1}. <@${row.user_id}> — ${row.success_rate}% success, ${row.average_guesses ?? "—"} avg, ${row.games} games`).join("\n"),
+          rows.map((row, i) => `${i + 1}. <@${row.user_id}> — ${row.success_rate}% success, ${row.average_guesses ?? "—"} avg, ${row.losses} losses, ${row.games} games`).join("\n"),
           "*Puzzle wins* _(lowest successful guess count; ties share the win)_",
           puzzleWins.length
             ? puzzleWins.map((row, i) => `${i + 1}. <@${row.user_id}> — ${row.puzzle_wins} win${row.puzzle_wins === 1 ? "" : "s"}`).join("\n")
