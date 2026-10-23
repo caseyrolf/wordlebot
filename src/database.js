@@ -83,3 +83,26 @@ export function puzzleWinsLeaderboard(db, channelId) {
     LIMIT 10
   `).all(channelId, channelId);
 }
+
+export function lossesLeaderboard(db, channelId) {
+  return db.prepare(`
+    WITH puzzle_maximums AS (
+      SELECT puzzle_number, MAX(guesses) AS highest_guesses
+      FROM wordle_results
+      WHERE channel_id = ? AND success = 1
+      GROUP BY puzzle_number
+    )
+    SELECT results.user_id,
+           SUM(CASE
+             WHEN results.success = 0 OR results.guesses = maximums.highest_guesses THEN 1
+             ELSE 0
+           END) AS losses
+    FROM wordle_results AS results
+    LEFT JOIN puzzle_maximums AS maximums
+      ON maximums.puzzle_number = results.puzzle_number
+    WHERE results.channel_id = ?
+    GROUP BY results.user_id
+    ORDER BY losses DESC, results.user_id ASC
+    LIMIT 10
+  `).all(channelId, channelId);
+}
